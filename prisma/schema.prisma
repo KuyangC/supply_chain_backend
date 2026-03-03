@@ -109,3 +109,8 @@ model ShipmentItem {
   shipment   Shipment @relation(fields: [shipmentId], references: [id])
   product    Product  @relation(fields: [productId], references: [id])
 }
+
+seed ts {
+  provider = "ts-node"
+  engineType = "library"
+}
