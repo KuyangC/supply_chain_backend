@@ -1,200 +1,193 @@
-Backend Setup Guide - NestJS + Prisma + MySQL                                                                                                                                                                                                                                                                       
-  Project Structure                                                                                                                                        
-  
-  D:\Ndut\
-  ├── supply-chain-tracking\      ← Frontend (Next.js)
-  └── supply-chain-backend\       ← Backend (NestJS)
+# Supply Chain Backend API
 
-  Step-by-Step Setup Checklist
+Backend untuk sistem tracking supply chain dengan **NestJS + Prisma + MySQL**.
 
-  Phase 1: Create NestJS Project
+## Tech Stack
 
-  - Open terminal at D:\Ndut\
-  - Run: npx @nestjs/cli new supply-chain-backend --package-manager npm --skip-git
-  - Enter folder: cd supply-chain-backend
-  - Test: npm run start:dev
-  - Open http://localhost:3000 - should see "Welcome to NestJS!"
-  - Stop server (Ctrl + C)
+- **Framework**: NestJS 11
+- **ORM**: Prisma 6
+- **Database**: MySQL
+- **Validation**: class-validator, class-transformer
 
-  Phase 2: Setup MySQL Database
+## Prerequisites
 
-  - Install MySQL if needed
-  - Open MySQL Workbench / DBeaver
-  - Create database: CREATE DATABASE supply_chain_db;
-  - Note credentials:
-    - Host: localhost
-    - Port: 3306
-    - User: root
-    - Password: YOUR_PASSWORD
-    - Database: supply_chain_db
+- Node.js 18+
+- MySQL (Laragon / XAMPP / MySQL Server)
+- npm atau yarn
 
-  Phase 3: Install Prisma & MySQL Driver
+## Setup
 
-  - In supply-chain-backend folder:
-  npm install prisma @prisma/client
-  npm install mysql2
-  - Initialize Prisma: npx prisma init
-  - Check prisma/ folder created
+### 1. Install Dependencies
 
-  Phase 4: Configure Database Connection
+```bash
+npm install
+```
 
-  - Open .env file
-  - Update DATABASE_URL:
-  DATABASE_URL="mysql://root:YOUR_PASSWORD@localhost:3306/supply_chain_db"
+### 2. Setup Database
 
-  Phase 5: Define Prisma Schema
+Buat database MySQL bernama `supply_chain_db`:
 
-  - Open prisma/schema.prisma
-  - Change provider to mysql
-  - Add models (copy schema from chat above)
+```sql
+CREATE DATABASE supply_chain_db;
+```
 
-  Phase 6: Run Migration
+### 3. Configure Environment
 
-  - Run: npx prisma migrate dev --name init
-  - Check MySQL Workbench - tables created
-  - Run: npx prisma generate
+Buat file `.env` di root project:
 
-  Phase 7: Create Prisma Service
+```env
+DATABASE_URL="mysql://root@localhost:3306/supply_chain_db"
+```
 
-  - Create folder: src/database/
-  - Create file: src/database/prisma.service.ts
-  import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-  import { PrismaClient } from '@prisma/client';
+Untuk Laragon dengan password:
 
-  @Injectable()
-  export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
-    async onModuleInit() {
-      await this.$connect();
-    }
+```env
+DATABASE_URL="mysql://root:password@localhost:3306/supply_chain_db"
+```
 
-    async onModuleDestroy() {
-      await this.$disconnect();
-    }
-  }
+### 4. Run Migration
 
-  Phase 8: Create User Module
+```bash
+npx prisma migrate dev
+```
 
-  - Run: npx nest g module users
-  - Run: npx nest g service users
-  - Run: npx nest g controller users
+### 5. Start Development Server
 
-  Phase 9: Test API
+```bash
+npm run start:dev
+```
 
-  - Run: npm run start:dev
-  - Test: GET http://localhost:3000/users
-  - Test: POST http://localhost:3000/users
+Server berjalan di `http://localhost:3000`
 
-  Phase 10: Additional Dependencies
+## API Endpoints
 
-  npm install class-validator class-transformer
-  npm install @nestjs/config
-  npm install @nestjs/jwt @nestjs/passport passport passport-jwt
-  npm install bcrypt
-  npm install -D @types/passport-jwt @types/bcrypt
+### Users
 
-  Prisma Schema (Full)
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| GET | `/users` | Get all users |
+| GET | `/users/:id` | Get user by ID |
+| POST | `/users` | Create new user |
+| PATCH | `/users/:id` | Update user |
+| DELETE | `/users/:id` | Delete user |
 
-  datasource db {
-    provider = "mysql"
-    url      = env("DATABASE_URL")
-  }
+### Create User (POST /users)
 
-  generator client {
-    provider = "prisma-client-js"
-  }
+**Request Body:**
 
-  enum Role {
-    ADMIN
-    MANAGER
-    OPERATOR
-    VIEWER
-  }
+```json
+{
+  "email": "user@example.com",
+  "name": "John Doe",
+  "password": "password123",
+  "role": "VIEWER"
+}
+```
 
-  enum ShipmentStatus {
-    PENDING
-    CONFIRMED
-    PICKED_UP
-    IN_TRANSIT
-    DELIVERED
-    FAILED
-    CANCELLED
-  }
+**Available Roles:**
+- `ADMIN`
+- `MANAGER`
+- `OPERATOR`
+- `VIEWER`
 
-  model User {
-    id        String   @id @default(uuid())
-    email     String   @unique
-    name      String
-    password  String
-    role      Role     @default(VIEWER)
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    shipments Shipment[]
-  }
+### Products
 
-  model Product {
-    id          String   @id @default(uuid())
-    sku         String   @unique
-    name        String
-    category    String
-    unit        String
-    stock       Int      @default(0)
-    minStock    Int      @default(10)
-    tags        String?
-    status      String   @default("ACTIVE")
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
-    inventory   Inventory[]
-    shipmentItems ShipmentItem[]
-  }
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| GET | `/products` | Get all products |
+| GET | `/products/:id` | Get product by ID |
+| POST | `/products` | Create new product |
+| PATCH | `/products/:id` | Update product |
+| DELETE | `/products/:id` | Delete product |
 
-  model Location {
-    id        String   @id @default(uuid())
-    name      String
-    address   String?
-    type      String   @default("WAREHOUSE")
-    createdAt DateTime @default(now())
-    inventory Inventory[]
-    shipments Shipment[]
-  }
+### Locations
 
-  model Inventory {
-    id          String   @id @default(uuid())
-    productId   String
-    locationId  String
-    batch       String?
-    qty         Int      @default(0)
-    reserved    Int      @default(0)
-    available   Int      @default(0)
-    expiry      DateTime?
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
-    product     Product  @relation(fields: [productId], references: [id])
-    location    Location @relation(fields: [locationId], references: [id])
-    @@unique([productId, locationId, batch])
-  }
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| GET | `/locations` | Get all locations |
+| GET | `/locations/:id` | Get location by ID |
+| POST | `/locations` | Create new location |
+| PATCH | `/locations/:id` | Update location |
+| DELETE | `/locations/:id` | Delete location |
 
-  model Shipment {
-    id             String          @id @default(uuid())
-    trackingId     String          @unique
-    fromLocationId String
-    toLocationId   String
-    status         ShipmentStatus  @default(PENDING)
-    userId         String
-    notes          String?
-    createdAt      DateTime        @default(now())
-    updatedAt      DateTime        @updatedAt
-    fromLocation   Location        @relation(fields: [fromLocationId], references: [id])
-    toLocation     Location        @relation(fields: [toLocationId], references: [id])
-    user           User            @relation(fields: [userId], references: [id])
-    items          ShipmentItem[]
-  }
+### Inventory
 
-  model ShipmentItem {
-    id         String   @id @default(uuid())
-    shipmentId String
-    productId  String
-    qty        Int
-    createdAt  DateTime @default(now())
-    shipment   Shipment @relation(fields: [shipmentId], references: [id])
-    product    Product  @relation(fields: [productId], references: [id])
-  }
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| GET | `/inventory` | Get all inventory |
+| GET | `/inventory/:id` | Get inventory by ID |
+| POST | `/inventory` | Add stock to location |
+| PATCH | `/inventory/:id` | Update inventory |
+| DELETE | `/inventory/:id` | Delete inventory |
+
+### Shipments
+
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| GET | `/shipments` | Get all shipments |
+| GET | `/shipments/:id` | Get shipment by ID |
+| POST | `/shipments` | Create new shipment |
+| PATCH | `/shipments/:id` | Update shipment status |
+| DELETE | `/shipments/:id` | Delete shipment |
+
+## Database Schema
+
+```
+User         - Pengguna sistem dengan role
+Product      - Produk dengan SKU, stok, kategori
+Location     - Lokasi gudang/warehouse
+Inventory    - Stok per produk per lokasi
+Shipment     - Pengiriman antar lokasi
+ShipmentItem - Item dalam pengiriman
+```
+
+## Project Structure
+
+```
+src/
+├── main.ts              - Entry point
+├── app.module.ts        - Root module
+├── prisma.service.ts    - Prisma Client wrapper
+├── prisma.module.ts     - Prisma module (Global)
+├── users/               - Users module
+│   ├── users.controller.ts
+│   ├── users.service.ts
+│   ├── users.module.ts
+│   └── dto/
+│       ├── create-user.dto.ts
+│       └── update-user.dto.ts
+```
+
+## Available Scripts
+
+| Command | Deskripsi |
+|---------|-----------|
+| `npm run start` | Start production mode |
+| `npm run start:dev` | Start development mode with watch |
+| `npm run start:debug` | Start with debug mode |
+| `npm run build` | Build project |
+| `npx prisma studio` | Open Prisma Studio (GUI) |
+| `npx prisma migrate dev` | Run migration |
+| `npx prisma generate` | Generate Prisma Client |
+
+## Environment Variables
+
+| Variable | Deskripsi | Default |
+|----------|-----------|---------|
+| `DATABASE_URL` | MySQL connection string | - |
+
+Format: `mysql://user:password@host:port/database`
+
+## Status Shipment
+
+- `PENDING` - Menunggu konfirmasi
+- `CONFIRMED` - Sudah dikonfirmasi
+- `PICKED_UP` - Barang diambil
+- `IN_TRANSIT` - Dalam perjalanan
+- `DELIVERED` - Sampai tujuan
+- `FAILED` - Gagal
+- `CANCELLED` - Dibatalkan
+
+## License
+
+MIT
