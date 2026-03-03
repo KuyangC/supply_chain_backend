@@ -1,0 +1,112 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+  moduleFormat  = "cjs"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  OPERATOR
+  VIEWER
+}
+
+enum ShipmentStatus {
+  PENDING
+  CONFIRMED
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  FAILED
+  CANCELLED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      Role     @default(VIEWER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  shipments Shipment[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  sku         String   @unique
+  name        String
+  category    String
+  unit        String
+  stock       Int      @default(0)
+  minStock    Int      @default(10)
+  tags        String?
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  inventory   Inventory[]
+  shipmentItems ShipmentItem[]
+}
+
+model Location {
+  id        String   @id @default(uuid())
+  name      String
+  address   String?
+  type      String   @default("WAREHOUSE")
+  createdAt DateTime @default(now())
+  inventory Inventory[]
+  shipmentsFrom Shipment[] @relation("ShipmentFromLocation")
+  shipmentsTo Shipment[] @relation("ShipmentToLocation")
+}
+
+model Inventory {
+  id          String   @id @default(uuid())
+  productId   String
+  locationId  String
+  batch       String?
+  qty         Int      @default(0)
+  reserved    Int      @default(0)
+  available   Int      @default(0)
+  expiry      DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  product     Product  @relation(fields: [productId], references: [id])
+  location    Location @relation(fields: [locationId], references: [id])
+  @@unique([productId, locationId, batch])
+}
+
+model Shipment {
+  id             String          @id @default(uuid())
+  trackingId     String          @unique
+  fromLocationId String
+  toLocationId   String
+  status         ShipmentStatus  @default(PENDING)
+  userId         String
+  notes          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  fromLocation   Location        @relation("ShipmentFromLocation", fields: [fromLocationId], references: [id])
+  toLocation     Location        @relation("ShipmentToLocation", fields: [toLocationId], references: [id])
+  user           User            @relation(fields: [userId], references: [id])
+  items          ShipmentItem[]
+}
+
+model ShipmentItem {
+  id         String   @id @default(uuid())
+  shipmentId String
+  productId  String
+  qty        Int
+  createdAt  DateTime @default(now())
+  shipment   Shipment @relation(fields: [shipmentId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id])
+}
