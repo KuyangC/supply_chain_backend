@@ -10,7 +10,7 @@ export class ProductsService {
 
   create(data: CreateProductDto) {
     return this.prisma.product.create({
-      data,
+      data: data,
     });
   }
 

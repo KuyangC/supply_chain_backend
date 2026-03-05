@@ -18,32 +18,33 @@ import { Roles } from 'src/auth/roles.decorator';
 @Controller('products')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ProductsController {
-  constructor(private readonly productService: ProductsService) {}
+  constructor(private readonly productsService: ProductsService) {}
 
   @Post()
   @Roles('ADMIN', 'MANAGER')
-  create(@Body() CreateProductDto: CreateProductDto) {
-    return this.productService.create(CreateProductDto);
+  create(@Body() createProductDto: CreateProductDto) {
+    return this.productsService.create(createProductDto);
   }
 
   @Get()
   findAll() {
-    return this.productService.findAll();
+    return this.productsService.findAll();
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.productService.findOne(id);
+    return this.productsService.findOne(id);
   }
+
   @Patch(':id')
   @Roles('ADMIN', 'MANAGER', 'OPERATOR')
-  update(@Param('id') id: string, @Body() UpdateProductDto: UpdateProductDto) {
-    return this.productService.update(id, UpdateProductDto);
+  update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
+    return this.productsService.update(id, updateProductDto);
   }
 
   @Delete(':id')
   @Roles('ADMIN', 'MANAGER')
   remove(@Param('id') id: string) {
-    return this.productService.remove(id);
+    return this.productsService.remove(id);
   }
 }
